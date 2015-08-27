@@ -1,0 +1,49 @@
+
+@----------------------------------------------------------@
+|        PLINK!       |     v1.07      |   10/Aug/2009     |
+|----------------------------------------------------------|
+|  (C) 2009 Shaun Purcell, GNU General Public License, v2  |
+|----------------------------------------------------------|
+|  For documentation, citation & bug-report instructions:  |
+|        http://pngu.mgh.harvard.edu/purcell/plink/        |
+@----------------------------------------------------------@
+
+Skipping web check... [ --noweb ] 
+Writing this text to log file [ test4.log ]
+Analysis started: Sun Jul 12 17:43:48 2015
+
+Options in effect:
+	--bfile example_qc
+	--epistasis
+	--make-bed
+	--out test4
+	--noweb
+
+Reading map (extended format) from [ example_qc.bim ] 
+151561 markers to be included from [ example_qc.bim ]
+Reading pedigree information from [ example_qc.fam ] 
+112 individuals read from [ example_qc.fam ] 
+112 individuals with nonmissing phenotypes
+Assuming a disease phenotype (1=unaff, 2=aff, 0=miss)
+Missing phenotype value is also -9
+59 cases, 53 controls and 0 missing
+57 males, 55 females, and 0 of unspecified sex
+Reading genotype bitfile from [ example_qc.bed ] 
+Detected that binary PED file is v1.00 SNP-major mode
+Before frequency and genotyping pruning, there are 151561 SNPs
+112 founders and 0 non-founders found
+554 heterozygous haploid genotypes; set to missing
+Writing list of heterozygous haploid genotypes to [ test4.hh ]
+Total genotyping rate in remaining individuals is 0.996526
+0 SNPs failed missingness test ( GENO > 1 )
+0 SNPs failed frequency test ( MAF < 0 )
+After frequency and genotyping pruning, there are 151561 SNPs
+After filtering, 59 cases, 53 controls and 0 missing
+After filtering, 57 males, 55 females, and 0 of unspecified sex
+Writing pedigree information to [ test4.fam ] 
+Writing map (extended format) information to [ test4.bim ] 
+Writing genotype bitfile to [ test4.bed ] 
+Using (default) SNP-major mode
+
+Analysis finished: Sun Jul 12 17:43:50 2015
+
