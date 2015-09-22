@@ -1,0 +1,53 @@
+
+@----------------------------------------------------------@
+|        PLINK!       |     v1.07      |   10/Aug/2009     |
+|----------------------------------------------------------|
+|  (C) 2009 Shaun Purcell, GNU General Public License, v2  |
+|----------------------------------------------------------|
+|  For documentation, citation & bug-report instructions:  |
+|        http://pngu.mgh.harvard.edu/purcell/plink/        |
+@----------------------------------------------------------@
+
+Web-based version check ( --noweb to skip )
+Recent cached web-check found... OK, v1.07 is current
+
++++ PLINK 1.9 is now available! See above website for details +++ 
+
+Writing this text to log file [ try1.log ]
+Analysis started: Sat Aug 29 06:31:57 2015
+
+Options in effect:
+	--xwas
+	--xepi
+	--bfile sim1
+	--out try1
+
+Reading map (extended format) from [ sim1.bim ] 
+10 markers to be included from [ sim1.bim ]
+Reading pedigree information from [ sim1.fam ] 
+2000 individuals read from [ sim1.fam ] 
+2000 individuals with nonmissing phenotypes
+Assuming a disease phenotype (1=unaff, 2=aff, 0=miss)
+Missing phenotype value is also -9
+1000 cases, 1000 controls and 0 missing
+0 males, 2000 females, and 0 of unspecified sex
+Reading genotype bitfile from [ sim1.bed ] 
+Detected that binary PED file is v1.00 SNP-major mode
+Before frequency and genotyping pruning, there are 10 SNPs
+2000 founders and 0 non-founders found
+Total genotyping rate in remaining individuals is 1
+0 SNPs failed missingness test ( GENO > 1 )
+0 SNPs failed frequency test ( MAF < 0 )
+After frequency and genotyping pruning, there are 10 SNPs
+After filtering, 1000 cases, 1000 controls and 0 missing
+After filtering, 0 males, 2000 females, and 0 of unspecified sex
+Converting data to Individual-major format
+Writing xepistasis pairwise results to [ try1.xepi.cc ] 
+threshold for displaying xepistatic result (--xepi1) : p <= 1
+threshold for counting epistatic result (--xepi2) : p <= 1
+ALL x ALL xepistasis mode
+Performed a total of 45 valid SNP x SNP tests
+Writing epsitasis summary results to [ try1.xepi.cc.summary ]
+
+Analysis finished: Sat Aug 29 06:31:57 2015
+

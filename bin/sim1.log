@@ -9,12 +9,12 @@
 @----------------------------------------------------------@
 
 Web-based version check ( --noweb to skip )
-Connecting to web...  OK, v1.07 is current
+Recent cached web-check found... OK, v1.07 is current
 
 +++ PLINK 1.9 is now available! See above website for details +++ 
 
-Writing this text to log file [ xwas.log ]
-Analysis started: Tue Sep  1 17:23:12 2015
+Writing this text to log file [ sim1.log ]
+Analysis started: Sat Aug 29 06:13:17 2015
 
 ** Unused command line option: --record 
 

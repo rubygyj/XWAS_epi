@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
+#include <math.h>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
@@ -2465,13 +2466,71 @@ void calcXepistasis(Plink& P){
 				// Did model fit ok?
 				lm -> validParameters();
 
-				// Obtain estimates and statistic
-
+				// Obtain estimate and use t-test 
 				lm -> testParameter = 3; // interaction
 				vector_t b = lm -> getCoefs();
-				double chisq = lm -> getStatistic();
-				double pvalue = chiprobP(chisq,1);
-				double z = sqrt(chisq); //??????????????????????
+
+				vector< vector<double> > Xdes = lm -> X;
+				int nind = lm -> Ysize();
+				int np = lm -> getNP();
+				vector_t resid_squar_temp(nind,-1);
+				double mean_b_inter = 0.0;
+				int i = 0;
+				int j = 0;
+				while(i < nind && j < P.n) {
+					if (!P.sample[j] -> missing){
+						double e_i = P.sample[j] -> pperson -> phenotype;
+						for (int p=0;p<np;p++){
+							e_i -= (lm ->getCoefs())[p] * Xdes[i][p];
+						}
+						mean_b_inter += Xdes[i][2];
+						e_i = abs(e_i);
+
+						resid_squar_temp[i] = pow(e_i,2);
+						i++;
+					}
+					j++;
+				}
+				
+				double resid_sum;
+				for (int i =0; i< resid_squar_temp.size(); i++){
+					resid_sum += resid_squar_temp[i];
+				}
+
+				mean_b_inter /= nind;
+				i = 0;
+				j = 0;
+				vector_t mean_squar(nind,-1);
+				while(i < nind && j < P.n) {
+					if (!P.sample[j] -> missing){
+						mean_squar[i] = pow((Xdes[i][2] - mean_b_inter),2);
+						i++;
+					}
+					j++;
+				}
+				double mean_sum =0.0;
+				for ( int i=0;i<mean_squar.size();i++){
+					mean_sum += mean_squar[i];
+				}
+
+				int df = 0;
+				if (par::clist){
+					df = nind - 3 - par::clist_number - 1;
+				}else{
+					df = nind - 3 - 1;
+				}
+
+				double Stand_err_b_inter = sqrt(resid_sum/((nind-2)*mean_sum));
+
+				double pvalue = calc_tprob(Stand_err_b_inter,df);
+
+
+
+				//lm -> testParameter = 3; // interaction
+				//vector_t b = lm -> getCoefs();
+				//double chisq = lm -> getStatistic();
+				//double pvalue = chiprobP(chisq,1);
+				//double z = sqrt(chisq); //??????????????????????
 
 				// Is this result worth displaying?
 				if (lm -> isValid())
@@ -2485,7 +2544,7 @@ void calcXepistasis(Plink& P){
 					if (sA[e2]) summary_good[e2]++;
 
 					// Do we want to record this as part of the summary for the first set?
-					if ( z >= xpar::xepi_alpha2)
+					if ( pvalue <= xpar::xepi_alpha2)
 					{
 						// first variable will always be in A set
 						summary_sig[e1]++;
@@ -2496,9 +2555,9 @@ void calcXepistasis(Plink& P){
 
 					// Is this result the best score yet for marker in set A?
 
-					if ( z >= best_score[e1])
+					if ( pvalue <= best_score[e1])
 					{
-						best_score[e1] = z;
+						best_score[e1] = pvalue;
 						best_partner[e1] = e2;
 					}
 
@@ -2506,16 +2565,16 @@ void calcXepistasis(Plink& P){
 
 					if (sA[e2])
 					{
-						if ( z >= best_score[e2])
+						if ( pvalue <= best_score[e2])
 						{
-							best_score[e2] = z;
+							best_score[e2] = pvalue;
 							best_partner[e2] = e1;
 						}
 					}
 
 					// Is this result worth displaying?
 
-					if ( z >= xpar::xepi_alpha1)
+					if ( pvalue <= xpar::xepi_alpha1)
 					{
 						XEPI << setw(4) << P.locus[e1]->chr << " "
 						<< setw(par::pp_maxsnp) << P.locus[e1]->name << " "
@@ -2526,18 +2585,15 @@ void calcXepistasis(Plink& P){
 						{
 							if (par::bt) 
 								XEPI << setw(12) << exp(b[3]) << " "
-								<< setw(12) << chisq << " "
 								<< setw(12) << pvalue << " "
 								<< "\n";
 							else
 								XEPI << setw(12) << b[3] << " "
-								<< setw(12) << chisq << " "
 								<< setw(12) << pvalue << " "
 								<< "\n" ;
 						}
 						else 
 							XEPI << setw(12) << "NA" << " "
-							<< setw(12) << "NA" << " "
 							<< setw(12) << "NA" << " "
 							<< "\n";
 
@@ -2578,7 +2634,7 @@ void calcXepistasis(Plink& P){
 		<< setw(12) << "N_SIG" << " "
 		<< setw(12) << "N_TOT" << " "
 		<< setw(12) << "PROP" << " "
-		<< setw(12) << "BEST_CHISQ" << " "
+		<< setw(12) << "BEST_pvalue" << " "
 		<< setw(12) << "BEST_CHR" << " "
 		<< setw(par::pp_maxsnp) << "BEST_SNP" << " "
 		<< "\n";
