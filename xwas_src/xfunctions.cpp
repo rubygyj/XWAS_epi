@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
+#include <algorithm>
 #include <math.h>
 #include <iomanip>
 #include <fstream>
@@ -2334,6 +2335,7 @@ void calcXepistasis(Plink& P){
 			error ("There is no valid sets specifed");
 
 		for (int e=0;e<P.snpset[0].size();e++)
+			//cout << "P.snpset[0].size" << P.snpset[0].size() << endl; number of SNP in gene1
 			sA [P.snpset[0][e]] = true;
 
 		// Has a second set been specified?
@@ -2373,9 +2375,13 @@ void calcXepistasis(Plink& P){
 
 	// Count how many items in the SET1
 	int epc = 0;
+	int epcb = 0;
 	for (vector<bool>::iterator e1 = sA.begin();
 		e1 != sA.end(); e1++)
 		if (*e1) epc++;
+	for (vector<bool>::iterator e2 = sB.begin();
+		e2 != sB.end(); e2++)
+		if (*e2) epcb++;
 
 	int epcc = 0;
 
@@ -2386,6 +2392,11 @@ void calcXepistasis(Plink& P){
 	vector<int> summary_good(P.nl_all,0);
 	vector<double> best_score(P.nl_all,0);
 	vector<int> best_partner(P.nl_all);
+	vector< vector<double> > corr_item; // Store all the A vector for correlation computation size(SA)*size(SB) rows, np cols
+
+
+	int corr_item_num = 0;
+	int np = 0;
 
 	//////////////////////////////////////////
 	// Begin interating over pairs : SET x SET
@@ -2470,48 +2481,53 @@ void calcXepistasis(Plink& P){
 				lm -> testParameter = 3; // interaction
 				vector_t b = lm -> getCoefs();
 
-				vector< vector<double> > Xdes = lm -> X;
-				int nind = lm -> Ysize();
-				int np = lm -> getNP();
+				matrix_t Xdes = lm -> X;
+				int nind = lm -> Ysize(); // non-missing individuals of samples
+				np = lm -> getNP(); // total number of snps
+				sizeMatrix(corr_item, epc*epcb, np);
 				vector_t resid_squar_temp(nind,-1);
-				double mean_b_inter = 0.0;
+				double mean_b_inter = 0.0; // calculate the mean of interaction column
 				int i = 0;
 				int j = 0;
+				double resid_sum = 0.0;
 				while(i < nind && j < P.n) {
 					if (!P.sample[j] -> missing){
 						double e_i = P.sample[j] -> pperson -> phenotype;
 						for (int p=0;p<np;p++){
 							e_i -= (lm ->getCoefs())[p] * Xdes[i][p];
 						}
-						mean_b_inter += Xdes[i][2];
+						mean_b_inter += Xdes[i][3]; //the fourth column is interaction column
 						e_i = abs(e_i);
 
 						resid_squar_temp[i] = pow(e_i,2);
+						resid_sum += resid_squar_temp[i];
 						i++;
 					}
 					j++;
 				}
 				
-				double resid_sum;
-				for (int i =0; i< resid_squar_temp.size(); i++){
-					resid_sum += resid_squar_temp[i];
-				}
+				
+				// for (int i =0; i< resid_squar_temp.size(); i++){
+				// 	resid_sum += resid_squar_temp[i];
+				// }
 
 				mean_b_inter /= nind;
 				i = 0;
 				j = 0;
-				vector_t mean_squar(nind,-1);
+				vector_t mean_squar(nind,-1); // squar of the interaction cols
+				double mean_sum =0.0;
 				while(i < nind && j < P.n) {
 					if (!P.sample[j] -> missing){
-						mean_squar[i] = pow((Xdes[i][2] - mean_b_inter),2);
+						mean_squar[i] = pow((Xdes[i][3] - mean_b_inter),2);
+						mean_sum += mean_squar[i];
 						i++;
 					}
 					j++;
 				}
-				double mean_sum =0.0;
-				for ( int i=0;i<mean_squar.size();i++){
-					mean_sum += mean_squar[i];
-				}
+
+				// for ( int i=0;i<mean_squar.size();i++){
+				// 	mean_sum += mean_squar[i];
+				// }
 
 				int df = 0;
 				if (par::clist){
@@ -2520,11 +2536,43 @@ void calcXepistasis(Plink& P){
 					df = nind - 3 - 1;
 				}
 
-				double Stand_err_b_inter = sqrt(resid_sum/((nind-2)*mean_sum));
+				double Stand_err_b_inter = sqrt(resid_sum/(df*mean_sum)); // DF?
+				double t_statistic_inter = b[3]/Stand_err_b_inter;
 
-				double pvalue = calc_tprob(Stand_err_b_inter,df);
+				double pvalue = calc_tprob(t_statistic_inter,df);
 
+				// Calculate H[4,]*t(Xdes)/sqrt(H[4,4])
+				matrix_t Xdes_t;
+				sizeMatrix(Xdes_t,4+par::clist_number,nind);
+				for (int i=0;i<nind;i++){
+					for (int j=0;j<4+par::clist_number;j++){
+						Xdes_t[j][i] = Xdes[i][j];
+					}
+				}
+				matrix_t H;
+				multMatrix(Xdes_t,Xdes,H);
+				bool flag = true;
+				bool all_valid = lm -> checkVIF();
+				H = svd_inverse(H,flag);
+				if(!flag) {
+					all_valid = false;
+					return;
+				}
 
+				matrix_t temp_a ; // 1*np matrix
+				matrix_t H4; // 1*nind matrix
+				sizeMatrix(H4,1,nind);
+				for (int i=0; i<nind;i++)
+					H4[0][i] = H[3][i];
+				matrix_t TEMP;
+				multMatrix(H4, Xdes_t, temp_a);
+				for (int i=0;i<np;i++){
+					corr_item[(e1-1)*epc + e2][i] = temp_a[0][i] /sqrt(H[3][3]);
+				}
+				
+				// temp_a = temp_a / sqrt(H[3][3]);
+				// corr_item[(e1-1)*epc + e2] = temp_a;
+			
 
 				//lm -> testParameter = 3; // interaction
 				//vector_t b = lm -> getCoefs();
@@ -2654,6 +2702,38 @@ void calcXepistasis(Plink& P){
 				<< setw(par::pp_maxsnp) << P.locus[best_partner[e1]]->name << " "
 				<< "\n";
 			}
+		}
+
+		XEPI.close();
+
+		// Output correlation matrix
+		f += ".corr";
+		XEPI.open(f.c_str(), ios::out);
+		XEPI.clear();
+
+		P.printLOG("Writing correlation matrix for each pair of interaction to [ " + f + " ]\n");
+		XEPI.precision(4);
+		matrix_t corr_matrix;
+		sizeMatrix(corr_matrix, epc*epcb, epc*epcb);
+		double corr = 0.0;
+		for (int i =0;i<epc*epcb; i++){
+			for(int j=i+1;j<epc*epcb;j++){
+				for(int k = 0;k<np;k++){
+					corr += (corr_item[i][k] * corr_item[j][k]);
+				}
+				// transform(temp.begin(), temp.end(),temp2.begin(),temp2.end(), multiplies<double>());
+				corr_matrix[i][j] = corr;
+				corr_matrix[j][i] = corr;
+			}
+			corr_matrix[i][i] = 1;
+
+		}
+
+		for (int i=0; i< epc*epcb;i++){
+			for (int j=0;j<epc*epcb; j++){
+				XEPI << setw(12) << corr_matrix[i][j] << " ";
+			}
+			XEPI << "\n";
 		}
 
 		XEPI.close();

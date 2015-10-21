@@ -19,7 +19,7 @@
 # ---------------------------------------------------------------------
 
 # Set this variable to either UNIX, MAC or WIN
-SYS = MAC
+SYS = UNIX
 
 # Leave blank after "=" to disable; put "= 1" to enable
 WITH_R_PLUGINS = 1
